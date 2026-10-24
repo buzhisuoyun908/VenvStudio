@@ -1096,6 +1096,37 @@ class AppearanceMixin:
                 f"Try manually:\n  sudo apt-get install {pkg}",
             )
 
-    def _toggle_language(self, enabled):
-        """Enable/disable language combo based on checkbox."""
-        self.lang_combo.setEnabled(enabled)
+    def _on_language_selected(self, _index=0):
+        """Apply a language picked in Settings — immediately, no restart.
+
+        The widget layer keeps every widget's English source text, so switching
+        is a re-render rather than a rebuild: the window, the open dialog and
+        this page all change language in place, and nothing the user typed is
+        lost (see src/utils/i18n_qt.py).
+        """
+        try:
+            code = self.lang_combo.currentData()
+        except Exception:
+            return
+        if not code:
+            return
+
+        from src.utils.i18n import get_language, set_language
+
+        # Persist first: a crash during the re-render must not lose the choice.
+        try:
+            self.config.set("language", code)
+        except Exception:
+            pass
+
+        if code == get_language():
+            return
+
+        try:
+            set_language(code)          # notifies listeners -> retranslate_all
+            from src.utils.i18n_qt import apply_layout_direction, retranslate_all
+            retranslate_all()
+            apply_layout_direction()
+        except Exception:
+            pass
+

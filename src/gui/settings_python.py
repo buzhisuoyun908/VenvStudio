@@ -70,14 +70,21 @@ class PythonMixin:
                 spin.setEnabled(False)
                 spin.setValue(def_size)
 
-        # Language
-        lang = self.config.get("language", "en")
-        idx = self.lang_combo.findData(lang)
-        if idx >= 0:
-            self.lang_combo.setCurrentIndex(idx)
-        # Always start unticked — user must tick to change language
-        self.lang_enabled_cb.setChecked(False)
-        self.lang_combo.setEnabled(False)
+        # Language — the selector is always live. Picking a language applies it
+        # at once; here we only show what is currently in effect. Signals are
+        # blocked so restoring the saved index does not re-trigger the switch.
+        try:
+            from src.utils.i18n import get_language
+
+            cur_lang = self.config.get("language") or get_language()
+            idx = self.lang_combo.findData(cur_lang)
+            if idx >= 0:
+                self.lang_combo.blockSignals(True)
+                self.lang_combo.setCurrentIndex(idx)
+                self.lang_combo.blockSignals(False)
+            self.lang_combo.setEnabled(True)
+        except Exception:
+            pass
 
         # Venv dir
         self.venv_dir_input.setText(str(self.config.get_venv_base_dir()))

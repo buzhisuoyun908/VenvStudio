@@ -388,15 +388,26 @@ class AdvancedMixin:
         font_size = self.config.get("font_secondary_size", 13)
         self.font_changed.emit(font_family, font_size)
 
-        # Language
+        # Language — applied live when the user picks one, saved here.
         new_lang = self.lang_combo.currentData()
         if not new_lang:
             new_lang = "en"
-        old_lang = self.config.get("language", "en")
+        try:
+            from src.utils.i18n import get_language, set_language
+
+            old_lang = self.config.get("language") or get_language()
+        except Exception:
+            old_lang = self.config.get("language", "en")
         self.config.set("language", new_lang)
-        lang_changed = (new_lang != old_lang and self.lang_enabled_cb.isChecked())
-        if lang_changed:
-            self.language_changed.emit(new_lang)
+        if new_lang != old_lang:
+            try:
+                set_language(new_lang)
+                from src.utils.i18n_qt import retranslate_all
+
+                retranslate_all()
+                self.language_changed.emit(new_lang)
+            except Exception:
+                pass
 
         # Default Python
         # Default Python — only save if checkbox is enabled
@@ -472,18 +483,13 @@ class AdvancedMixin:
         QMessageBox.information(self, "Settings", "Settings saved successfully! ✅")
 
         if lang_changed:
-            reply = QMessageBox.question(
-                self, "Restart Required",
-                "Language changed. VenvStudio needs to restart.\n\nRestart now?",
-                QMessageBox.Yes | QMessageBox.No,
-            )
-            if reply == QMessageBox.Yes:
-                import sys, subprocess
-                from PySide6.QtWidgets import QApplication
-                # Find the main script
-                main_script = sys.argv[0] if sys.argv else "main.py"
-                subprocess.Popen([sys.executable, main_script])
-                QApplication.instance().quit()
+            # Nothing to restart: _on_language_selected already re-rendered the
+            # interface in place. The text below is translated by the same
+            # runtime layer, so it appears in whichever language is now active.
+            QMessageBox.information(
+                self, "Settings",
+                "Language switched — the interface has already been redrawn. "
+                "No restart is needed.")
 
     def _reset_all(self):
         """Reset all settings to defaults."""
@@ -513,12 +519,21 @@ class AdvancedMixin:
         self._reset_fonts()
 
     def _reset_language(self):
-        """Reset Language section to defaults."""
-        self.lang_enabled_cb.setChecked(False)
+        """Reset Language section to defaults (English, applied immediately)."""
+        self.lang_combo.blockSignals(True)
         idx = self.lang_combo.findData("en")
         if idx >= 0:
             self.lang_combo.setCurrentIndex(idx)
+        self.lang_combo.blockSignals(False)
         self.config.set("language", "en")
+        try:
+            from src.utils.i18n import set_language
+            from src.utils.i18n_qt import retranslate_all
+
+            set_language("en")
+            retranslate_all()
+        except Exception:
+            pass
 
     def _reset_general(self):
         """Reset General section to defaults."""

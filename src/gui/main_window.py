@@ -351,26 +351,29 @@ class MainWindow(EnvListMixin, EnvOperationsMixin, EnvExportMixin, QuickLaunchMi
 
         self.nav_buttons = []
 
-        self.btn_packages = SidebarButton(tr("packages"), "\U0001f4e6")
+        self.btn_packages = SidebarButton(tr("packages"), "\U0001f4e6",
+                                          label_key="packages")
         self.btn_packages.setChecked(True)
         self.btn_packages.setToolTip(UI_TOOLTIPS.get("sidebar_packages", ""))
         self.btn_packages.clicked.connect(lambda: self._switch_page(0))
         sidebar_layout.addWidget(self.btn_packages)
         self.nav_buttons.append(self.btn_packages)
 
-        self.btn_envs = SidebarButton(tr("environments"), "\U0001f4c1")
+        self.btn_envs = SidebarButton(tr("environments"), "\U0001f4c1",
+                                      label_key="environments")
         self.btn_envs.setToolTip(UI_TOOLTIPS.get("sidebar_environments", ""))
         self.btn_envs.clicked.connect(lambda: self._switch_page(1))
         sidebar_layout.addWidget(self.btn_envs)
         self.nav_buttons.append(self.btn_envs)
 
-        self.btn_settings = SidebarButton(tr("settings"), "\u2699\ufe0f")
+        self.btn_settings = SidebarButton(tr("settings"), "\u2699\ufe0f",
+                                          label_key="settings")
         self.btn_settings.setToolTip(UI_TOOLTIPS.get("sidebar_settings", ""))
         self.btn_settings.clicked.connect(lambda: self._switch_page(2))
         sidebar_layout.addWidget(self.btn_settings)
         self.nav_buttons.append(self.btn_settings)
 
-        self.btn_learn = SidebarButton("Learn", "📚")
+        self.btn_learn = SidebarButton(tr("learn"), "📚", label_key="learn")
         self.btn_learn.setToolTip("Browse tutorials, code snippets, and learning resources")
         self.btn_learn.clicked.connect(lambda: self._switch_page(3))
         sidebar_layout.addWidget(self.btn_learn)
@@ -387,7 +390,8 @@ class MainWindow(EnvListMixin, EnvOperationsMixin, EnvExportMixin, QuickLaunchMi
         # layout next to Environments AND to the list in that position would
         # have shifted Settings and Learn, highlighting the wrong button on
         # every switch.
-        self.btn_projects = SidebarButton("Projects", "\U0001f5c2\ufe0f")
+        self.btn_projects = SidebarButton(tr("projects"), "\U0001f5c2\ufe0f",
+                                          label_key="projects")
         self.btn_projects.setToolTip(
             "Projects created with uv, poetry, hatch, pdm or pixi")
         self.btn_projects.clicked.connect(lambda: self._switch_page(4))

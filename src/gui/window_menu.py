@@ -138,6 +138,26 @@ class WindowMenuMixin:
         settings_view_action.triggered.connect(self._open_settings)
         view_menu.addAction(settings_view_action)
 
+        # ── Language switch, reachable without opening Settings ──────────────
+        # Same code path as the dropdown in Settings → Appearance; the menu is
+        # just the faster way there. Both apply the change live.
+        lang_menu = QMenu(f"🌍 {tr('language')}", self)
+        try:
+            from src.utils.i18n import LANGUAGES, get_language
+
+            current = get_language()
+            for code, native_name in LANGUAGES.items():
+                act = QAction(native_name, self)
+                act.setCheckable(True)
+                act.setChecked(code == current)
+                act.triggered.connect(
+                    lambda _checked=False, c=code: self._switch_language(c))
+                lang_menu.addAction(act)
+        except Exception as _le:
+            from src.utils.logger import get_logger
+            get_logger("venvstudio.menu").debug(f"language menu skipped: {_le}")
+        view_menu.addMenu(lang_menu)
+
         tools_menu = menubar.addMenu("Tools")
         shortcut_action = QAction("🖥️ Create Desktop Shortcut", self)
         shortcut_action.triggered.connect(self._create_desktop_shortcut)
@@ -235,6 +255,38 @@ class WindowMenuMixin:
         help_menu.addAction(issues_action)
 
 
+
+    def _switch_language(self, code: str):
+        """Apply a language chosen from View → Language.
+
+        Identical path to the selector in Settings: set the language, let the
+        widget layer re-render every live widget from its remembered English
+        source, and save the choice so the next start uses it. No restart.
+        """
+        from src.utils.i18n import get_language, set_language
+
+        if not code or code == get_language():
+            return
+        try:
+            set_language(code)              # notifies listeners
+            from src.utils.i18n_qt import apply_layout_direction, retranslate_all
+
+            retranslate_all()
+            apply_layout_direction()
+        except Exception as exc:
+            from src.utils.logger import get_logger
+
+            get_logger("venvstudio.menu").warning(f"language switch failed: {exc}")
+            return
+
+        try:
+            self.config.set("language", code)
+        except Exception:
+            pass
+        try:                                # keep the checkmarks honest
+            self._log.info(f"language switched to {code}")
+        except Exception:
+            pass
 
     def _new_project(self):
         """File -> New Project... (N55/B26).

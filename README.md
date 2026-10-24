@@ -33,6 +33,27 @@
 
 ---
 
+## 🌏 界面语言 / Interface Language
+
+界面支持 **11 种语言**（英语、简体中文、土耳其语、德语、法语、西班牙语、葡萄牙语、俄语、日语、韩语、阿拉伯语），
+简体中文已完整汉化，包括主窗口、菜单、环境管理、包管理、项目页、设置页、学习中心与全部对话框。
+
+- **即时切换，无需重启**：`设置 → 外观 → 🌍 语言` 选择语言后，当前窗口、已打开的对话框全部立刻重绘为新语言；
+  也可以直接使用菜单 `视图 → 🌍 语言` 快速切换。
+- **自动识别**：首次启动跟随操作系统语言（中文系统直接以中文界面打开），之后记住你的选择。
+- **未翻译的部分保持英文原文**，不会出现空白或乱码。
+
+> The UI ships with 11 languages. Simplified Chinese is fully localized —
+> main window, menus, environments, packages, projects, settings, Learn page
+> and every dialog. Switching language applies **immediately, in place, with
+> no restart** (Settings → Appearance → 🌍 Language, or View → 🌍 Language).
+> On first start the language follows the OS. Anything not yet translated
+> stays in English rather than breaking.
+>
+> Adding a language: see [docs/I18N.md](docs/I18N.md).
+
+---
+
 ## 🎓 Educational by Design
 
 VenvStudio never hides the command it's actually running. Whether you're

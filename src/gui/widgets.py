@@ -33,15 +33,35 @@ class PathElideMiddleDelegate(QStyledItemDelegate):
         option.textElideMode = Qt.ElideMiddle
 
 
-class SidebarButton(QPushButton):
-    """Custom sidebar navigation button."""
+def _sidebar_display(text: str, icon_text: str = "") -> str:
+    return f"  {icon_text}  {text}" if icon_text else f"  {text}"
 
-    def __init__(self, text, icon_text="", parent=None):
-        display = f"  {icon_text}  {text}" if icon_text else f"  {text}"
-        super().__init__(display, parent)
+
+class SidebarButton(QPushButton):
+    """Custom sidebar navigation button.
+
+    ``label_key`` is optional and, when given, is an i18n key rather than
+    literal text. The button then rebuilds its own label whenever the language
+    changes: the visible string is a composition (padding + emoji + word), so
+    the runtime text layer cannot look it up in the dictionary — it has to be
+    re-composed from the key instead.
+    """
+
+    def __init__(self, text, icon_text="", parent=None, label_key=None):
+        super().__init__(_sidebar_display(text, icon_text), parent)
+        self._sidebar_icon = icon_text
+        self._sidebar_key = label_key
         self.setCheckable(True)
         self.setFixedHeight(44)
         self.setCursor(Qt.PointingHandCursor)
+        if label_key:
+            self._i18n_rebuild = self._rebuild_sidebar_label
+
+    def _rebuild_sidebar_label(self):
+        from src.utils.i18n import tr
+
+        self.setText(_sidebar_display(tr(self._sidebar_key), self._sidebar_icon))
+
 
 
 

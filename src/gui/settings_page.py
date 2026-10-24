@@ -505,31 +505,34 @@ class SettingsPage(AppearanceMixin, PythonMixin, CatalogMixin, AdvancedMixin, To
 
     def _setup_language_section(self, layout):
         # ── 2. LANGUAGE ──
+        #
+        # This used to be a checkbox plus a disabled dropdown, with a note
+        # saying the app would restart. It never did restart, so changing the
+        # language either did nothing until the next manual start or silently
+        # lost the setting. The selector is now always live: picking a
+        # language re-renders the whole interface in place (src/utils/i18n_qt.py)
+        # and saves the choice, so nothing is lost and nothing restarts.
         layout.addWidget(self._make_group_title_row(
             f"🌍 {tr('language')}",
             "Change the interface language of VenvStudio.\n"
-            "• Enable the checkbox to unlock the language selector\n"
-            "• 11 languages supported: EN, TR, DE, FR, ES, PT, RU, ZH, JA, KO, AR\n"
-            "• The application will restart automatically after saving",
+            "• Switching takes effect immediately — the window is redrawn in the\n"
+            "  chosen language, without a restart and without losing settings\n"
+            "• The choice is saved and used the next time VenvStudio starts\n"
+            "• 11 languages supported: EN, ZH, TR, DE, FR, ES, PT, RU, JA, KO, AR\n"
+            "• Text with no translation yet stays in English",
             "Reset Language", self._reset_language,
         ))
         lang_group = QGroupBox()
         lang_layout = QFormLayout()
         lang_layout.setSpacing(12)
 
-        lang_row = QHBoxLayout()
-        self.lang_enabled_cb = QCheckBox()
-        self.lang_enabled_cb.setChecked(False)
-        self.lang_enabled_cb.toggled.connect(self._toggle_language)
-        lang_row.addWidget(self.lang_enabled_cb)
-
         self.lang_combo = NoScrollComboBox()
         for code, name in LANGUAGES.items():
             self.lang_combo.addItem(f"{name}", code)
-        self.lang_combo.setEnabled(False)
-        lang_row.addWidget(self.lang_combo, 1)
+        self.lang_combo.setEnabled(True)
+        self.lang_combo.currentIndexChanged.connect(self._on_language_selected)
 
-        lang_layout.addRow(f"{tr('interface_language')}", lang_row)
+        lang_layout.addRow(f"{tr('interface_language')}", self.lang_combo)
 
         lang_note = QLabel(tr("language_note"))
         lang_note.setStyleSheet(f"color: {self._c()['fg_muted']}; font-size: {self._c()['fs_tiny']}px;")

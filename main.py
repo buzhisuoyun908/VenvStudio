@@ -542,7 +542,7 @@ def main():
         from src.gui.main_window import MainWindow
         from src.utils.constants import APP_NAME, APP_VERSION
         from src.core.config_manager import ConfigManager
-        from src.utils.i18n import set_language
+        from src.utils.i18n import set_language, system_language
         from src.utils.logger import setup_logging, get_logger
 
         # ── Initialize logging FIRST ──
@@ -648,9 +648,14 @@ def main():
             pass
 
         # ── Load config and language ──
+        #
+        # No saved language means "first start": follow the OS language, so a
+        # Chinese Windows opens in Chinese instead of asking the user to find
+        # the setting first. Once the user picks one in Settings it is stored
+        # and wins from then on.
         config = ConfigManager()
-        lang = config.get("language", "en")
-        set_language(lang)
+        lang = config.get("language") or system_language()
+        lang = set_language(lang)
         logger.info(f"Language: {lang}")
 
         # ── Linux: check Qt xcb dependencies before creating QApplication ──
@@ -669,6 +674,17 @@ def main():
         # platform_utils; this second call moved with it.
         install_qt_message_filter()
         app.setApplicationName(APP_NAME)
+
+        # ── Localization runtime ──
+        # Everything built after this point is translated when it is shown, and
+        # a later language switch re-renders live widgets in place (see
+        # src/utils/i18n_qt.py). Deliberately non-fatal: a missing translation
+        # must never stop VenvStudio from starting.
+        try:
+            from src.utils.i18n_qt import install as _install_i18n
+            _install_i18n(app)
+        except Exception as _i18n_exc:
+            logger.debug(f"i18n layer not installed: {_i18n_exc}")
 
         # ── B155: Allow Ctrl+C / Ctrl+D to close VenvStudio when launched from
         # a terminal. Qt's event loop normally blocks Python's signal handling,

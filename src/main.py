@@ -165,6 +165,20 @@ def main():
         # this file being a partial copy of that one is what caused the bug.
 
         config = ConfigManager()
+
+        # Language has to be set before MainWindow exists: every widget is
+        # translated as it is built/shown, so the setting must be in place
+        # first. No saved value means first start -> follow the OS language.
+        try:
+            from src.utils.i18n import set_language, system_language
+            from src.utils.i18n_qt import install as _install_i18n
+
+            _lang = set_language(config.get("language") or system_language())
+            log.info(f"Language: {_lang}")
+            _install_i18n(app)
+        except Exception as _le:
+            log.warning(f"i18n layer not installed: {_le}")
+
         window = MainWindow()
         window.show()
 

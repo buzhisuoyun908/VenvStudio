@@ -2,7 +2,19 @@ name: Build & Release VenvStudio
 
 on:
   push:
+    # `main` builds on every push so a broken build is caught by the commit
+    # that broke it, not by the release tag weeks later. Tags still drive the
+    # draft release and the PyPI upload; pull requests only compile.
+    branches: [main]
     tags: ['v*']
+    paths-ignore:
+      - '**/*.md'
+      - 'assets/screenshots/**'
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'assets/screenshots/**'
   workflow_dispatch:
 
 permissions:

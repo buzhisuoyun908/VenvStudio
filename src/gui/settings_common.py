@@ -31,17 +31,7 @@ class NoScrollComboBox(QComboBox):
         super().focusOutEvent(event)
 
 
-# Dil tanımları
-LANGUAGES = {
-    "en": "English",
-    "tr": "Türkçe",
-    "de": "Deutsch",
-    "fr": "Français",
-    "es": "Español",
-    "pt": "Português",
-    "ru": "Русский",
-    "zh": "中文",
-    "ja": "日本語",
-    "ko": "한국어",
-    "ar": "العربية",
-}
+# Dil tanımları / Language names.
+# Single source of truth: src/utils/i18n.py decides what a language is called
+# and which codes exist, because the runtime translator needs the same table.
+from src.utils.i18n import LANGUAGES  # noqa: E402,F401  (re-exported)

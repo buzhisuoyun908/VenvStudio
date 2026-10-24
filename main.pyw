@@ -51,10 +51,11 @@ def main():
         logger = setup_logging()
         logger.info(f"Starting {APP_NAME} v{APP_VERSION}")
 
-        # Load language setting before creating UI
+        # Load language setting before creating UI.
+        # No saved value = first start: follow the OS language.
+        from src.utils.i18n import set_language, system_language
         config = ConfigManager()
-        lang = config.get("language", "en")
-        set_language(lang)
+        lang = set_language(config.get("language") or system_language())
         logger.info(f"Language: {lang}")
 
         # High DPI support
@@ -66,6 +67,13 @@ def main():
         app.setApplicationName(APP_NAME)
         app.setApplicationVersion(APP_VERSION)
         app.setOrganizationName("VenvStudio")
+
+        # Translate widgets as they are shown; language switches re-render live.
+        try:
+            from src.utils.i18n_qt import install as _install_i18n
+            _install_i18n(app)
+        except Exception as _ie:
+            logger.debug(f"i18n layer not installed: {_ie}")
 
         # Set default font
         font = QFont("Segoe UI", 10)
