@@ -91,6 +91,29 @@ _SNAKE = re.compile(r"^[a-z0-9_\-\./ ]+$")
 _NOT_TEXT = re.compile(r"^(https?://|www\.|--|#|\\|/|[A-Za-z]:\\)")
 
 
+def looks_like_fragment(s: str) -> bool:
+    """True for pieces of a string that is assembled at runtime.
+
+    ``f"Found {n} " + "environment(s)"`` yields two literals, but the user only
+    ever sees the joined result — which equals neither literal. Counting them
+    as "untranslated" would be misleading (a translation for the piece could
+    never appear), so they are excluded from the coverage figure. The fix for
+    such a message is to make it one string and use a ``{n}`` template.
+    """
+    s = s.strip()
+    if not s:
+        return True
+    if s.endswith(" ") or s.startswith("<") or s.endswith("</b>"):
+        return True
+    if s[0] in "'\",;.)]}:\n":
+        return True
+    if re.search(r"\{\w*\}", s):
+        return True
+    if "px;" in s or "color:" in s:      # CSS/href pieces of rich text
+        return True
+    return False
+
+
 def _is_ui_text(s: str) -> bool:
     if not isinstance(s, str):
         return False
@@ -190,6 +213,9 @@ def main() -> int:
     ap.add_argument("--json", help="write full inventory to this file")
     ap.add_argument("--missing", action="store_true", help="only list missing")
     ap.add_argument("--limit", type=int, default=0, help="max lines to print")
+    ap.add_argument("--min-coverage", type=float, default=0.0, metavar="PCT",
+                    help="exit 1 if the translated share of UI strings drops "
+                         "below PCT (use in CI to stop coverage sliding)")
     args = ap.parse_args()
 
     per_file: dict[str, list[tuple[str, int, str]]] = defaultdict(list)
@@ -205,6 +231,11 @@ def main() -> int:
         for text, line, api in hits:
             all_texts.setdefault(text, []).append(f"{f}:{line}")
 
+    # Fragments of runtime-assembled strings cannot be translated as pieces;
+    # they are reported separately instead of counted as missing.
+    fragments = {t: v for t, v in all_texts.items() if looks_like_fragment(t)}
+    all_texts = {t: v for t, v in all_texts.items() if t not in fragments}
+
     try:
         dictionary = load_dictionary()
     except Exception as exc:               # dictionary not written yet
@@ -212,9 +243,12 @@ def main() -> int:
         dictionary = {}
 
     missing = {t: v for t, v in all_texts.items() if t not in dictionary}
+    covered = len(all_texts) - len(missing)
+    pct = (100.0 * covered / len(all_texts)) if all_texts else 100.0
+
     print(f"files scanned : {len(per_file)}")
-    print(f"unique strings: {len(all_texts)}")
-    print(f"translated    : {len(all_texts) - len(missing)}")
+    print(f"UI strings    : {len(all_texts)}   (fragments skipped: {len(fragments)})")
+    print(f"translated    : {covered}  ({pct:.1f}%)")
     print(f"missing       : {len(missing)}")
     print()
     for f, hits in sorted(per_file.items(), key=lambda kv: -len(kv[1]))[:15]:
@@ -232,6 +266,11 @@ def main() -> int:
             rows = rows[: args.limit]
         for t in rows:
             print(f"{t!r:>70}   {missing[t][0]}")
+
+    if args.min_coverage and pct < args.min_coverage:
+        print(f"\n::error::UI translation coverage {pct:.1f}% is below the "
+              f"required {args.min_coverage:.1f}%", file=sys.stderr)
+        return 1
     return 0
 
 

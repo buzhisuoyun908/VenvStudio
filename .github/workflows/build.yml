@@ -50,6 +50,11 @@ jobs:
         run: python -m pip install --upgrade pip pytest
       - name: Run tests
         run: python -m pytest -q
+      - name: Check Chinese UI coverage
+        # Chinese is the fully localized language; this fails the run if a
+        # change adds a pile of new English UI strings without translations,
+        # so coverage slides are noticed by the commit that caused them.
+        run: python tools/i18n_extract.py --min-coverage 75
 
   build-windows:
     needs: [tests]
