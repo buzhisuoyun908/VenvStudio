@@ -68,7 +68,11 @@ venvstudio-gui = "src.main:main"
 vs-gui = "src.main:main"
 
 [tool.setuptools]
-packages = ["src", "src.core", "src.gui", "src.utils"]
+# src.utils.i18n_data is listed explicitly: it holds the per-language
+# dictionaries (en/zh/tr/…, plus the zh_ui* UI-text tables). Without it the
+# pip-installed copy has no translations at all and every label falls back to
+# its English source — a silent failure that looks like "i18n is broken".
+packages = ["src", "src.core", "src.gui", "src.utils", "src.utils.i18n_data"]
 
 [tool.setuptools.package-data]
 # B132. The old list had "assets/*.png" and friends under "*", which
